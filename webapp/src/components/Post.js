@@ -23,7 +23,7 @@ function Post({ post, removePost, updatePost }) {
             params: {
                 filename: attachment.name,
                 filetype: attachment.type,
-                postId: postId,
+                postId: postId
             },
         };
 
@@ -56,7 +56,7 @@ function Post({ post, removePost, updatePost }) {
 
     const deletePost = async () => {
         const id = post.id.split("#")[1];
-        console.log(`/posts/${post.id}`)
+        // console.log(`/posts/${post.id}`)
         axios.delete(`/posts/${id}`, { headers: { Authorization: getToken() } })
             .then(res => {
                 console.log(post.id);

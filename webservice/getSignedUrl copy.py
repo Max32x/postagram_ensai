@@ -3,25 +3,22 @@ import boto3
 from boto3.dynamodb.conditions import Key
 import os
 import json
-from dotenv import load_dotenv
 import uuid
 from pathlib import Path
 from botocore.exceptions import ClientError
 
-load_dotenv()
 bucket = os.getenv("BUCKET")
-# bucket = "postagram-bucket20240430125341767400000001"
-
 s3_client = boto3.client('s3', config=boto3.session.Config(signature_version='s3v4'))
 logger = logging.getLogger("uvicorn")
 
-def getSignedUrl(filename: str,filetype: str, postId: str, user):
+def getSignedUrl(filename: str,filetype: str, postId: str):
 
     filename = f'{uuid.uuid4()}{Path(filename).name}'
-    object_name = f"{user}/{postId}/{filename}"
+    object_name = f"{postId}/{filename}"
+
+    print("boinjour")
 
     try:
-
         url = s3_client.generate_presigned_url(
             Params={
             "Bucket": bucket,
@@ -33,8 +30,8 @@ def getSignedUrl(filename: str,filetype: str, postId: str, user):
 
     except ClientError as e:
         logging.error(e)
-        return None
-    
+
+
     logger.info(f'Url: {url}')
     return {
             "uploadURL": url,

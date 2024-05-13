@@ -48,25 +48,46 @@ async def post_a_post(post: Post, authorization: str | None = Header(default=Non
     logger.info(f"body : {post.body}")
     logger.info(f"user : {authorization}")
 
-    # Doit retourner le résultat de la requête la table dynamodb
-    return []
+    import uuid
+    str_post_id = f'{uuid.uuid4()}'
+
+    # Insert the post data into DynamoDB
+    data = table.put_item(
+        Item={
+            'user': "USER#"+authorization,
+            'id': "POST#"+str_post_id,
+            'title': post.title,
+            'body': post.body,
+        }
+    )
+    return data 
 
 @app.get("/posts")
 async def get_all_posts(user: Union[str, None] = None):
 
-    # Doit retourner une liste de post
-    return []
+    response = table.scan()
+    if user: # Si un seul user
+        posts = [item for item in response.get('Items', []) if item.get('user') == user]
+    else: # Tous les posts
+        posts = response.get('Items', [])
 
-    
+    return posts
+
 @app.delete("/posts/{post_id}")
-async def get_post_user_id(post_id: str):
-    # Doit retourner le résultat de la requête la table dynamodb
-    return []
+async def delete_post(post_id: str, authorization: str | None = Header(default=None)):
+
+    data = table.delete_item(
+        Key={'user': "USER#"+authorization,
+             'id': "POST#"+post_id}
+    )
+
+    # Delete the image from BucketS3 (optionnel)
+    return data
+
 
 @app.get("/signedUrlPut")
-async def get_signed_url_put(filename: str,filetype: str, postId: str,authorization: str | None = Header(default=None)):
+async def get_signed_url_put(filename: str,filetype: str, postId: str, authorization: str | None = Header(default=None)):
     return getSignedUrl(filename, filetype, postId, authorization)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080, log_level="debug")
-
