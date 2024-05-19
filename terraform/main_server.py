@@ -16,7 +16,7 @@ import base64
 
 bucket="postagram-bucket20240430125341767400000001"
 dynamo_table="postagram-db"
-your_repo=""
+your_repo="https://github.com/Max32x/postagram_ensai"
 
 
 user_data= base64.b64encode(f"""
@@ -91,15 +91,47 @@ class ServerStack(TerraformStack):
             ]
             )
         
-        launch_template = LaunchTemplate()
+        launch_template = LaunchTemplate(
+            self, "launch_template",
+            image_id="ami-04b70fa74e45c3917",
+            instance_type="t2.micro", # le type de l'instance
+            user_data=user_data,
+            vpc_security_group_ids = [security_group.id],
+            key_name="vockey"
+            )
         
-        lb = Lb()
+        lb = Lb(
+            self, "lb",
+            load_balancer_type="application",
+            security_groups=[security_group.id],
+            subnets=subnets
+        )
 
-        target_group=LbTargetGroup()
+        target_group=LbTargetGroup(
+            self, "tg_group",
+            port=80,
+            protocol="HTTP",
+            vpc_id=default_vpc.id,
+            target_type="instance"
+        )
 
-        lb_listener = LbListener()
+        lb_listener = LbListener(
+            self, "lb_listener",
+            load_balancer_arn=lb.arn,
+            port=80,
+            protocol="HTTP",
+            default_action=[LbListenerDefaultAction(type="forward", target_group_arn=target_group.arn)]
+        )
 
-        asg = AutoscalingGroup()
+        asg = AutoscalingGroup(
+            self, "asg",
+            min_size=2,
+            max_size=4,
+            desired_capacity=2,
+            launch_template={"id":launch_template.id},
+            vpc_zone_identifier= subnets,
+            target_group_arns=[target_group.arn]
+        )
 
 
 app = App()
